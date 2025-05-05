@@ -69,6 +69,7 @@
     <Compile Include="Assets\Character\ragdollController.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Character\animationControl.cs" />
+    <Compile Include="Assets\Character\HandTrigger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Character\Materials\ToonShader.shader" />

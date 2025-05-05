@@ -49,13 +49,15 @@ public class animationControl : MonoBehaviour
             {
                 animator.SetBool("Grab",true);
                 GrabLeft = true;
-                Debug.Log("Setting Grab True");
+                mouseStartY = Input.mousePosition.y;
+                // Debug.Log("Setting Grab True");
             }
             else if (Input.GetMouseButtonDown(1))
             {
                 animator.SetBool("Grab",true);
                 GrabRight = true;
-                Debug.Log("Setting Grab True");
+                mouseStartY = Input.mousePosition.y;
+                // Debug.Log("Setting Grab True");
             }
         }
 

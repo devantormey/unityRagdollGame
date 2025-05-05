@@ -36,7 +36,7 @@ public class ragdollController : MonoBehaviour
 
     // Rotation Control
     public float turnStrength = 5000f; 
-    float maxAllowedAngle = 90f; // Degrees
+    // float maxAllowedAngle = 90f; // Degrees
 
 
     // Procedural Walking Targets
@@ -61,14 +61,17 @@ public class ragdollController : MonoBehaviour
     bool isJumping = false;
 
     //Grabbing Mechanic
-    public GameObject poseSampler; // Reference to PoseSampler GameObject
-    public AnimationClip grabMidClip;
-    public float grabBlendWeight = 1.0f; // 0 = no effect, 1 = fully apply
     public bool isGrabbingLeft = false;
     public bool isGrabbingRight = false;
-    private Dictionary<string, Quaternion> grabMidRotations;
     private Animation grabAnimation;
+    public FixedJoint leftGrabJoint;
+    public FixedJoint rightGrabJoint;
 
+    public HandTrigger leftHandTrigger;
+    public HandTrigger rightHandTrigger;
+
+
+    //Foot Pinning Mechanics (not working)
     private Vector3 rightFootStepStartPos;
     private Vector3 rightFootStepEndPos;
 
@@ -77,7 +80,6 @@ public class ragdollController : MonoBehaviour
 
     void Start()
     {
-        grabMidRotations = new Dictionary<string, Quaternion>();
         // Build bone map
         foreach (Rigidbody rb in ragdollRoot.GetComponentsInChildren<Rigidbody>())
         {
@@ -97,26 +99,6 @@ public class ragdollController : MonoBehaviour
         rootRb = FindBoneRigidbodyByName("Root");
 
 
-        if (grabMidClip != null)
-        {
-            grabAnimation = animatedObj.GetComponent<Animation>();
-            grabMidClip.SampleAnimation(animatedObj, 0f);  // Apply the pose to gooby_animated
-
-            foreach (Transform t in animatedObj.GetComponentsInChildren<Transform>())
-            {
-                grabMidRotations[t.name] = t.localRotation;
-            }
-
-            Debug.Log("Grab mid pose loaded from gooby_animated");
-
-        }
-
-        foreach (var kvp in grabMidRotations)
-        {
-            Debug.Log("Grab pose bone key: " + kvp.Key);
-        }
-
-
     }
     void Update(){
         bool toggleRagdollMode  = Input.GetKey(KeyCode.R);
@@ -124,11 +106,6 @@ public class ragdollController : MonoBehaviour
             ragdollMode = !ragdollMode;
         }
         jumpKeyInput = Input.GetKeyDown(KeyCode.Space);
-        // if(jumpKeyInput && !isJumping){
-        //     isJumping = true;
-        //     //apply jumpForce
-            
-        // }
 
         if (jumpKeyInput && !isJumping && IsGrounded())
         {
@@ -139,11 +116,26 @@ public class ragdollController : MonoBehaviour
         if (IsGrounded()){
             isJumping = false;
         }
+
+        if(Input.GetMouseButtonDown(0) && !Input.GetKeyDown(KeyCode.LeftShift)){
+            isGrabbingLeft = true;
+        }
+        if(Input.GetMouseButtonDown(1) && !Input.GetKeyDown(KeyCode.LeftShift)){
+            isGrabbingRight = true;
+        }
+
+        if(Input.GetMouseButtonUp(0) && isGrabbingLeft){
+            isGrabbingLeft = false;
+        }
+        if(Input.GetMouseButtonUp(1) && isGrabbingRight){
+            isGrabbingRight = false;
+        }
+
     }
     void FixedUpdate()
     {
-        isGrabbingLeft = Input.GetMouseButton(0);  // Left click
-        isGrabbingRight = Input.GetMouseButton(1); // Right click
+        // isGrabbingLeft = Input.GetMouseButtonDown(0);  // Left click
+        // isGrabbingRight = Input.GetMouseButtonDown(1); // Right click
 
         bool isPressingW = Input.GetKey(KeyCode.W);
         bool isPressingS = Input.GetKey(KeyCode.S);
@@ -158,29 +150,6 @@ public class ragdollController : MonoBehaviour
 
                 ApplyBoneRotationControl(pair.Key, pair.Value);
 
-
-                // // This is the alternative Grab mechanic
-                // string boneName = pair.Key.name;
-
-                // bool skipLeftArm = isGrabbingLeft && (boneName.Contains("UpperArm.L") || boneName.Contains("LowerArm.L"));
-                // bool skipRightArm = isGrabbingRight && (boneName.Contains("UpperArm.R") || boneName.Contains("LowerArm.R"));
-
-                // if (!skipLeftArm && !skipRightArm)
-                // {
-                //     ApplyBoneRotationControl(pair.Key, pair.Value);
-                // }
-                // }
-
-                // if (isGrabbingLeft)
-                // {
-                //     ApplyPoseToBone("UpperArm.L", grabMidRotations);
-                //     ApplyPoseToBone("LowerArm.L", grabMidRotations);
-                // }
-
-                // if (isGrabbingRight)
-                // {
-                //     ApplyPoseToBone("UpperArm.R", grabMidRotations);
-                //     ApplyPoseToBone("LowerArm.R", grabMidRotations);
             }
         }
 
@@ -282,12 +251,30 @@ public class ragdollController : MonoBehaviour
             // animatedRoot.transform.Rotate(Vector3.up * rotationSpeed * Time.deltaTime);
         }
 
+        if(leftHandTrigger.targetRigidbody != null){
+            Debug.Log("Trigger Found something: " + leftHandTrigger.targetRigidbody);
+        }
 
+        if (isGrabbingLeft && leftGrabJoint.connectedBody == null && leftHandTrigger.targetRigidbody != null)
+        {
+            GrabObject(leftHandTrigger.targetRigidbody, true);
+            Debug.Log("Attempting to Grab Left");
+        }
+        else if (!isGrabbingLeft && leftGrabJoint.connectedBody != null)
+        {
+            Debug.Log("Attempting to Grab Right");
+            ReleaseObject(true);
+        }
 
-
-        
-
-       
+        if (isGrabbingRight && rightGrabJoint.connectedBody == null && rightHandTrigger.targetRigidbody != null)
+        {
+            GrabObject(rightHandTrigger.targetRigidbody, false);
+        }
+        else if (!isGrabbingRight && rightGrabJoint.connectedBody != null)
+        {
+            ReleaseObject(false);
+        }        
+      
 
     }
 
@@ -300,19 +287,6 @@ public class ragdollController : MonoBehaviour
         }
         return null;
     }
-    private Rigidbody FindPelvisRigidbody()
-    {
-        foreach (var pair in boneMap)
-        {
-            if (pair.Key.name.ToLower().Contains("Root") || pair.Key.name.ToLower().Contains("root"))
-            {
-                return pair.Value;
-            }
-        }
-        Debug.LogWarning("Pelvis Rigidbody not found!");
-        return null;
-    }
-
     private Rigidbody FindBoneRigidbodyByName(string boneName)
         {
             foreach (var pair in boneMap)
@@ -374,56 +348,18 @@ public class ragdollController : MonoBehaviour
         return Physics.Raycast(ray, rayLength);
     }
 
-
-    void ApplyBoneRotationControlRelative(Transform animatedBone, Rigidbody ragdollBone)
+    public void GrabObject(Rigidbody targetRb, bool isLeft)
     {
-        Transform ragdollBoneTransform = ragdollBone.transform;
+        var joint = isLeft ? leftGrabJoint : rightGrabJoint;
 
-        // Correct RELATIVE way: compare local rotations directly
-        Quaternion targetLocalRotation = animatedBone.localRotation;
-        Quaternion currentLocalRotation = ragdollBoneTransform.localRotation;
-
-        Quaternion deltaRotation = targetLocalRotation * Quaternion.Inverse(currentLocalRotation);
-        deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
-
-        if (angle > 180f) angle -= 360f;
-
-        if (float.IsNaN(axis.x) || float.IsNaN(axis.y) || float.IsNaN(axis.z))
-        {
-            return;
-        }
-
-        Vector3 torque = (axis * angle * Mathf.Deg2Rad * rotationStiffness) - ragdollBone.angularVelocity * rotationDamping;
-
-        float maxTorqueForce = 1000f;
-        torque = Vector3.ClampMagnitude(torque, maxTorqueForce);
-
-        ragdollBone.AddTorque(torque, ForceMode.Acceleration);
+        joint.connectedBody = targetRb;
     }
 
-    void ApplyPoseToBone(string boneName, Dictionary<string, Quaternion> pose)
+    public void ReleaseObject(bool isLeft)
     {
-        var rb = FindBoneRigidbodyByName(boneName);
-        Debug.Log("Bone: " + rb);
-        Debug.Log(boneName + "Bone Pose:" + pose[boneName]);
-        if (rb != null && pose.ContainsKey(boneName))
-        {
-            Debug.Log(boneName + "Bone Pose:" + pose[boneName]);
-
-            Quaternion target = pose[boneName];
-            Quaternion currentLocal = rb.transform.localRotation;
-            Quaternion delta = target * Quaternion.Inverse(currentLocal);
-            delta.ToAngleAxis(out float angle, out Vector3 axis);
-            Debug.Log("Angle: " + angle);
-            if (angle > 180f) angle -= 360f;
-            if (float.IsNaN(axis.x) || float.IsNaN(axis.y) || float.IsNaN(axis.z)) {
-                Debug.Log("hit this naughty boy");
-                return;
-            }
-
-            Vector3 torque = (axis * angle * Mathf.Deg2Rad * rotationStiffness) - rb.angularVelocity * rotationDamping;
-            rb.AddTorque(torque, ForceMode.Acceleration);
-        }
+        var joint = isLeft ? leftGrabJoint : rightGrabJoint;
+        joint.connectedBody = null;
+        // joint.enabled = false; //This is also not a valid function call
     }
 
 
