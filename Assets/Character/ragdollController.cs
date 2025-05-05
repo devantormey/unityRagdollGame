@@ -353,13 +353,13 @@ public class ragdollController : MonoBehaviour
         var joint = isLeft ? leftGrabJoint : rightGrabJoint;
 
         joint.connectedBody = targetRb;
+        
     }
 
     public void ReleaseObject(bool isLeft)
     {
         var joint = isLeft ? leftGrabJoint : rightGrabJoint;
         joint.connectedBody = null;
-        // joint.enabled = false; //This is also not a valid function call
     }
 
 
