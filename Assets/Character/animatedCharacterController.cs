@@ -32,6 +32,26 @@ public class AnimationController : MonoBehaviour
         transform.Rotate(Vector3.up * rotationSpeed * Time.deltaTime);
     }
 
+    public void FaceInputDirection(Vector3 inputDirection)
+    {
+        if (inputDirection.sqrMagnitude > 0.01f)
+        {
+            // World-space forward vector for rotation
+            Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
+
+            // Keep only Y-axis rotation
+            Vector3 euler = targetRotation.eulerAngles;
+            euler.x = 0f;
+            euler.z = 0f;
+
+            Quaternion yOnlyRotation = Quaternion.Euler(euler);
+            transform.rotation = Quaternion.Slerp(transform.rotation, yOnlyRotation, 10f * Time.deltaTime);
+        }
+    }
+
+
+
+
     public void PunchLeft()
     {
         animator.SetTrigger("PunchLeft");

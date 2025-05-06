@@ -2,11 +2,13 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private  RagdollController ragdollController;
+    private RagdollController ragdollController;
     private AnimationController animationController;
 
     public bool isGrabbingLeft = false;
     public bool isGrabbingRight = false;
+
+    private Vector3 inputDirection;
 
     void Start()
     {
@@ -19,19 +21,15 @@ public class PlayerController : MonoBehaviour
         if (animationController == null)
             Debug.LogError("animationController not found!");
 
-         ragdollController.Initialize(); 
+        ragdollController.Initialize(); 
     }
 
     void Update()
     {
-        // Movement input
-        bool moveForward = Input.GetKey(KeyCode.W);
-        bool turnLeft = Input.GetKey(KeyCode.A);
-        bool turnRight = Input.GetKey(KeyCode.D);
-
-        animationController.SetWalking(moveForward);
-        if (turnLeft) animationController.RotateLeft();
-        if (turnRight) animationController.RotateRight();
+        // WASD movement direction
+        float h = Input.GetKey(KeyCode.A) ? -1f : (Input.GetKey(KeyCode.D) ? 1f : 0f);
+        float v = Input.GetKey(KeyCode.S) ? -1f : (Input.GetKey(KeyCode.W) ? 1f : 0f);
+        inputDirection = new Vector3(h, 0f, v).normalized;
 
         // Punching
         bool isHoldingShift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
@@ -48,13 +46,11 @@ public class PlayerController : MonoBehaviour
             {
                 isGrabbingLeft = true;
                 animationController.StartGrab(true, Input.mousePosition.y);
-                // ragdollController.StartGrab(true);
             }
             if (Input.GetMouseButtonDown(1))
             {
                 isGrabbingRight = true;
                 animationController.StartGrab(false, Input.mousePosition.y);
-                // ragdollController.StartGrab(false);
             }
         }
 
@@ -62,7 +58,6 @@ public class PlayerController : MonoBehaviour
             ragdollController.TryGrab(true);
         if (isGrabbingRight)
             ragdollController.TryGrab(false);
-
 
         // Grabbing (Update)
         if (isGrabbingLeft || isGrabbingRight)
@@ -100,6 +95,16 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        ragdollController.TickPhysics();
+        Vector3 rootVelocity = ragdollController.GetRootVelocity();
+
+        // Animate walking based on real movement
+        animationController.SetWalking(rootVelocity.magnitude > 1.2f);
+
+        animationController.FaceInputDirection(inputDirection);
+
+
+        // Apply movement forces
+        ragdollController.TickPhysics(inputDirection);
     }
+
 }

@@ -26,11 +26,7 @@ public class RagdollController : MonoBehaviour
     public float jumpForce = 500f;
 
     [Header("Foot Control")]
-    public Transform leftFootTarget;
-    public Transform rightFootTarget;
-    public float stepLength = 0.6f;
-    public float stepHeight = 0.4f;
-    public float stepDuration = 0.8f;
+    public bool groundedBool = true;
 
     [Header("Grabbing")]
     public ConfigurableJoint leftGrabJoint;
@@ -41,17 +37,9 @@ public class RagdollController : MonoBehaviour
     private Dictionary<Transform, Rigidbody> boneMap = new();
     private Rigidbody spineRb;
     private Rigidbody rootRb;
-    private bool leftFootStepping;
-    private bool rightFootStepping;
-    private float leftFootStepStartTime;
-    private float rightFootStepStartTime;
-    private Vector3 leftFootStepStartPos;
-    private Vector3 leftFootStepEndPos;
-    private Vector3 rightFootStepStartPos;
-    private Vector3 rightFootStepEndPos;
 
     private bool ragdollMode;
-    private bool isJumping;
+    public bool isJumping;
 
     public void Initialize()
     {
@@ -106,31 +94,6 @@ public class RagdollController : MonoBehaviour
         spineRb.AddTorque(Vector3.up * turnStrength * direction, ForceMode.Acceleration);
     }
 
-    public void SimulateStep(float deltaTime)
-    {
-        if (leftFootStepping)
-            AnimateFootStep(ref leftFootStepStartTime, ref leftFootStepping, leftFootTarget, leftFootStepStartPos, leftFootStepEndPos, deltaTime, "LowerLeg.L");
-        if (rightFootStepping)
-            AnimateFootStep(ref rightFootStepStartTime, ref rightFootStepping, rightFootTarget, rightFootStepStartPos, rightFootStepEndPos, deltaTime, "LowerLeg.R");
-    }
-
-    public void StartStep(bool left)
-    {
-        if (left && !leftFootStepping)
-        {
-            leftFootStepping = true;
-            leftFootStepStartTime = Time.time;
-            leftFootStepStartPos = leftFootTarget.position;
-            leftFootStepEndPos = leftFootStepStartPos - ragdollRoot.forward * stepLength;
-        }
-        else if (!left && !rightFootStepping)
-        {
-            rightFootStepping = true;
-            rightFootStepStartTime = Time.time;
-            rightFootStepStartPos = rightFootTarget.position;
-            rightFootStepEndPos = rightFootStepStartPos - ragdollRoot.forward * stepLength;
-        }
-    }
 
     public void GrabObject(Rigidbody targetRb, bool isLeft)
     {
@@ -150,29 +113,6 @@ public class RagdollController : MonoBehaviour
         joint.zMotion = ConfigurableJointMotion.Free;
     }
 
-    private void AnimateFootStep(ref float startTime, ref bool stepping, Transform target, Vector3 start, Vector3 end, float delta, string boneName)
-    {
-        float t = (Time.time - startTime) / stepDuration;
-        if (t >= 1f)
-        {
-            t = 1f;
-            stepping = false;
-        }
-        Vector3 horiz = Vector3.Lerp(start, end, t);
-        float vert = Mathf.Sin(t * Mathf.PI) * stepHeight;
-        target.position = horiz + Vector3.up * vert;
-        ApplyFootSpring(target, boneName);
-    }
-
-    private void ApplyFootSpring(Transform target, string boneName)
-    {
-        Rigidbody rb = FindBoneRigidbodyByName(boneName);
-        if (rb != null)
-        {
-            Vector3 force = (target.position - rb.position) * 1000f - rb.linearVelocity * 100f;
-            rb.AddForce(force, ForceMode.Acceleration);
-        }
-    }
 
     private void ApplyBoneRotationControl(Transform animatedBone, Rigidbody ragdollBone)
     {
@@ -246,16 +186,28 @@ public class RagdollController : MonoBehaviour
     {
         ragdollMode = !ragdollMode;
     }
-    public void TickPhysics()
+    public void TickPhysics(Vector3 moveDirection)
     {
         ApplyBoneRotationControlAll();
         UpdateSpineSpring();
-        ApplyMovement(Input.GetKey(KeyCode.W));
-        if (Input.GetKey(KeyCode.S)) StartStep(!leftFootStepping && !rightFootStepping);
-        SimulateStep(Time.fixedDeltaTime);
-        if (Input.GetKey(KeyCode.A)) ApplyTurning(-1);
-        if (Input.GetKey(KeyCode.D)) ApplyTurning(1);
-        SetIsJumping(!IsGrounded());
+
+        if(IsGrounded() && isJumping)
+        {
+            isJumping = false;
+        }
+        if (moveDirection != Vector3.zero && IsGrounded())
+        {
+            // Move in world-space direction
+            Vector3 worldDir = moveDirection.normalized;
+            rootRb.AddForce(worldDir * moveForwardForce, ForceMode.Acceleration);
+            spineRb.AddForce(worldDir * spine_moveForce, ForceMode.Acceleration);
+        }
     }
+
+    public Vector3 GetRootVelocity()
+    {
+        return rootRb != null ? rootRb.linearVelocity : Vector3.zero;
+    }
+
 
 }
