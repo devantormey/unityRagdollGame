@@ -64,8 +64,8 @@ public class ragdollController : MonoBehaviour
     public bool isGrabbingLeft = false;
     public bool isGrabbingRight = false;
     private Animation grabAnimation;
-    public FixedJoint leftGrabJoint;
-    public FixedJoint rightGrabJoint;
+    public ConfigurableJoint leftGrabJoint;
+    public ConfigurableJoint rightGrabJoint;
 
     public HandTrigger leftHandTrigger;
     public HandTrigger rightHandTrigger;
@@ -353,12 +353,19 @@ public class ragdollController : MonoBehaviour
         var joint = isLeft ? leftGrabJoint : rightGrabJoint;
 
         joint.connectedBody = targetRb;
+        joint.xMotion = ConfigurableJointMotion.Limited;
+        joint.yMotion = ConfigurableJointMotion.Limited;
+        joint.zMotion = ConfigurableJointMotion.Limited;
+
         
     }
 
     public void ReleaseObject(bool isLeft)
     {
         var joint = isLeft ? leftGrabJoint : rightGrabJoint;
+        joint.xMotion = ConfigurableJointMotion.Free;
+        joint.yMotion = ConfigurableJointMotion.Free;
+        joint.zMotion = ConfigurableJointMotion.Free;
         joint.connectedBody = null;
     }
 
