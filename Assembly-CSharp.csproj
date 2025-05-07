@@ -66,9 +66,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Character\CameraControl.cs" />
+    <Compile Include="Assets\Character\old_PlayerController.cs" />
+    <Compile Include="Assets\Character\KeyboardInputProvider.cs" />
+    <Compile Include="Assets\Character\GamePadBindings.cs" />
+    <Compile Include="Assets\Character\IInputProvider.cs" />
     <Compile Include="Assets\Character\ragdollCharacterController.cs" />
     <Compile Include="Assets\Character\animatedCharacterController.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\Character\InputState.cs" />
+    <Compile Include="Assets\Character\GamepadInputProvider.cs" />
     <Compile Include="Assets\Character\PlayerController.cs" />
     <Compile Include="Assets\Character\HandTrigger.cs" />
   </ItemGroup>

@@ -2443,7 +2443,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1797057260}
-  - component: {fileID: 1797057261}
+  - component: {fileID: 1797057262}
+  - component: {fileID: 1797057263}
   m_Layer: 0
   m_Name: Player1
   m_TagString: Untagged
@@ -2468,7 +2469,7 @@ Transform:
   - {fileID: 543450653156583299}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1797057261
+--- !u!114 &1797057262
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2477,11 +2478,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 1797057259}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9db0b0565cecacc4a9f21e07bd6feae3, type: 3}
+  m_Script: {fileID: 11500000, guid: cccdae49e3b783a4a8dc39bf84b8e2f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isGrabbingLeft: 0
-  isGrabbingRight: 0
+--- !u!114 &1797057263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1797057259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15861de3c852c944897fe4131726aaf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configFileName: GamepadBindings.json
 --- !u!54 &1887239465
 Rigidbody:
   m_ObjectHideFlags: 0

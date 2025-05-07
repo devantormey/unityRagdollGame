@@ -4,107 +4,90 @@ public class PlayerController : MonoBehaviour
 {
     private RagdollController ragdollController;
     private AnimationController animationController;
+    private IInputProvider inputProvider;
+    private InputState inputState;
 
-    public bool isGrabbingLeft = false;
-    public bool isGrabbingRight = false;
-
-    private Vector3 inputDirection;
+    private bool wasGrabbingLeft = false;
+    private bool wasGrabbingRight = false;
 
     void Start()
     {
         ragdollController = GetComponentInChildren<RagdollController>();
         animationController = GetComponentInChildren<AnimationController>();
+        inputProvider = GetComponent<IInputProvider>(); // This can be Keyboard or Gamepad
 
         if (ragdollController == null)
             Debug.LogError("RagdollController not found!");
 
         if (animationController == null)
-            Debug.LogError("animationController not found!");
+            Debug.LogError("AnimationController not found!");
 
-        ragdollController.Initialize(); 
+        if (inputProvider == null)
+            Debug.LogError("No input provider found!");
+
+        ragdollController.Initialize();
     }
 
     void Update()
     {
-        // WASD movement direction
-        float h = Input.GetKey(KeyCode.A) ? -1f : (Input.GetKey(KeyCode.D) ? 1f : 0f);
-        float v = Input.GetKey(KeyCode.S) ? -1f : (Input.GetKey(KeyCode.W) ? 1f : 0f);
-        inputDirection = new Vector3(h, 0f, v).normalized;
+        inputState = inputProvider.GetInputState();
+
+        // Movement
+        animationController.SetWalking(inputState.MoveDirection.magnitude > 0.1f);
+
+        // Rotate the visual to face movement
+        animationController.FaceInputDirection(inputState.MoveDirection);
 
         // Punching
-        bool isHoldingShift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-        if (isHoldingShift)
+        if (inputState.IsPunchingLeft) animationController.PunchLeft();
+        if (inputState.IsPunchingRight) animationController.PunchRight();
+
+        // Grabbing
+        if (inputState.IsGrabbingLeft && !wasGrabbingLeft)
         {
-            if (Input.GetMouseButtonDown(0)) animationController.PunchLeft();
-            if (Input.GetMouseButtonDown(1)) animationController.PunchRight();
+            animationController.StartGrab(true, inputState.GrabHeight);
+        }
+        if (inputState.IsGrabbingRight && !wasGrabbingRight)
+        {
+            animationController.StartGrab(false, inputState.GrabHeight);
         }
 
-        // Grabbing (Start)
-        if (!isHoldingShift)
+        if (inputState.IsGrabbingLeft)
         {
-            if (Input.GetMouseButtonDown(0))
-            {
-                isGrabbingLeft = true;
-                animationController.StartGrab(true, Input.mousePosition.y);
-            }
-            if (Input.GetMouseButtonDown(1))
-            {
-                isGrabbingRight = true;
-                animationController.StartGrab(false, Input.mousePosition.y);
-            }
-        }
-
-        if (isGrabbingLeft)
+            animationController.UpdateGrabHeight(inputState.GrabHeight);
             ragdollController.TryGrab(true);
-        if (isGrabbingRight)
-            ragdollController.TryGrab(false);
-
-        // Grabbing (Update)
-        if (isGrabbingLeft || isGrabbingRight)
+        }
+        if (inputState.IsGrabbingRight)
         {
-            animationController.UpdateGrabHeight(Input.mousePosition.y);
+            animationController.UpdateGrabHeight(inputState.GrabHeight);
+            ragdollController.TryGrab(false);
         }
 
-        // Grabbing (End)
-        if (Input.GetMouseButtonUp(0) && isGrabbingLeft)
+        if (!inputState.IsGrabbingLeft && wasGrabbingLeft)
         {
-            isGrabbingLeft = false;
             animationController.StopGrab(true);
             ragdollController.StopGrab(true);
         }
 
-        if (Input.GetMouseButtonUp(1) && isGrabbingRight)
+        if (!inputState.IsGrabbingRight && wasGrabbingRight)
         {
-            isGrabbingRight = false;
             animationController.StopGrab(false);
             ragdollController.StopGrab(false);
         }
 
-        // Jump
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            ragdollController.TryJump();
-        }
+        // Cache for next frame
+        wasGrabbingLeft = inputState.IsGrabbingLeft;
+        wasGrabbingRight = inputState.IsGrabbingRight;
 
-        // Toggle Ragdoll Mode
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            ragdollController.ToggleRagdollMode();
-        }
+        // Jump
+        if (inputState.IsJumping)
+            ragdollController.TryJump();
+
+        // Optional: toggle ragdoll mode here
     }
 
     void FixedUpdate()
     {
-        Vector3 rootVelocity = ragdollController.GetRootVelocity();
-
-        // Animate walking based on real movement
-        animationController.SetWalking(rootVelocity.magnitude > 1.2f);
-
-        animationController.FaceInputDirection(inputDirection);
-
-
-        // Apply movement forces
-        ragdollController.TickPhysics(inputDirection);
+        ragdollController.TickPhysics(inputState.MoveDirection);
     }
-
 }
