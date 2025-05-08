@@ -8,9 +8,7 @@ public class AnimationController : MonoBehaviour
     private bool grabLeft = false;
     private bool grabRight = false;
 
-    private float grabHeight = 0.5f; // 0 = low, 1 = high
-    private float mouseStartY;
-    private float mouseSensitivity = 0.003f;
+    private float grabHeight = 0.5f;
 
     void Start()
     {
@@ -36,21 +34,13 @@ public class AnimationController : MonoBehaviour
     {
         if (inputDirection.sqrMagnitude > 0.01f)
         {
-            // World-space forward vector for rotation
             Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
-
-            // Keep only Y-axis rotation
             Vector3 euler = targetRotation.eulerAngles;
             euler.x = 0f;
             euler.z = 0f;
-
-            Quaternion yOnlyRotation = Quaternion.Euler(euler);
-            transform.rotation = Quaternion.Slerp(transform.rotation, yOnlyRotation, 10f * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(euler), 10f * Time.deltaTime);
         }
     }
-
-
-
 
     public void PunchLeft()
     {
@@ -62,21 +52,16 @@ public class AnimationController : MonoBehaviour
         animator.SetTrigger("PunchRight");
     }
 
-    public void StartGrab(bool isLeft, float currentMouseY)
+    public void StartGrab(bool isLeft)
     {
         animator.SetBool("Grab", true);
-        mouseStartY = currentMouseY;
-
         if (isLeft) grabLeft = true;
         else grabRight = true;
     }
 
-    public void UpdateGrabHeight(float currentMouseY)
+    public void UpdateGrabHeight(float normalizedHeight)
     {
-        if (!grabLeft && !grabRight) return;
-
-        float mouseDeltaY = currentMouseY - mouseStartY;
-        grabHeight = Mathf.Clamp01(0.5f + mouseDeltaY * mouseSensitivity);
+        grabHeight = Mathf.Clamp01(normalizedHeight);  // Ensure it's between 0–1
         animator.SetFloat("GrabHeight", grabHeight);
     }
 
@@ -85,7 +70,6 @@ public class AnimationController : MonoBehaviour
         if (isLeft) grabLeft = false;
         else grabRight = false;
 
-        // If neither grab is still active, clear animation state
         if (!grabLeft && !grabRight)
         {
             animator.SetBool("Grab", false);

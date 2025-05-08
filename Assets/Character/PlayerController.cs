@@ -45,11 +45,11 @@ public class PlayerController : MonoBehaviour
         // Grabbing
         if (inputState.IsGrabbingLeft && !wasGrabbingLeft)
         {
-            animationController.StartGrab(true, inputState.GrabHeight);
+            animationController.StartGrab(true);
         }
         if (inputState.IsGrabbingRight && !wasGrabbingRight)
         {
-            animationController.StartGrab(false, inputState.GrabHeight);
+            animationController.StartGrab(false);
         }
 
         if (inputState.IsGrabbingLeft)
