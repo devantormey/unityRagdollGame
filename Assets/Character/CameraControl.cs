@@ -2,18 +2,26 @@ using UnityEngine;
 
 public class FollowCamera : MonoBehaviour
 {
-    public Transform target;  // Your player
-    public Vector3 offset = new Vector3(0, 3, -6);
+    public Transform target;
+    public Vector3 offset = new Vector3(0, 12, -20);
     public float followSpeed = 5f;
 
     void LateUpdate()
     {
         if (target == null) return;
 
-        Vector3 desiredPosition = target.position + target.rotation * offset;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, followSpeed * Time.deltaTime);
+        Vector3 currentPosition = transform.position;
 
-        // Optional: look at player
-        transform.LookAt(target.position + Vector3.up * 1.5f);
+        // Lock Z to initial value, only update X and Y based on the target
+        Vector3 desiredPosition = new Vector3(
+            target.position.x + offset.x,
+            offset.y ,// Keep current y
+            target.position.z + offset.z
+        );
+
+        transform.position = Vector3.Lerp(currentPosition, desiredPosition, followSpeed * Time.deltaTime);
+
+        // Lock rotation entirely (no sea sickness)
+        transform.rotation = Quaternion.identity;
     }
 }

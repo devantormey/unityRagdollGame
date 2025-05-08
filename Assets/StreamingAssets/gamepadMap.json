@@ -1,0 +1,10 @@
+{
+    "movement": "LeftStick",
+    "grab_height": "RightStickY",
+    "jump": "ButtonA",
+    "punch_right": "RightTrigger",
+    "punch_left": "LeftTrigger",
+    "grab_right": "RightBumper",
+    "grab_left": "LeftBumper"
+  }
+  

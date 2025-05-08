@@ -59,16 +59,22 @@
     <UnityVersion>6000.0.34f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Analyzer Include="C:\Users\devan\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.1.1\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Users\devan\.vscode\extensions\visualstudiotoolsforunity.vstuc-1.1.2\Analyzers\Microsoft.Unity.Analyzers.dll" />
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.34f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.34f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.34f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Character\CameraControl.cs" />
-    <Compile Include="Assets\Character\ragdollController.cs" />
+    <Compile Include="Assets\Character\KeyboardInputProvider.cs" />
+    <Compile Include="Assets\Character\IInputProvider.cs" />
+    <Compile Include="Assets\Character\ragdollCharacterController.cs" />
+    <Compile Include="Assets\Character\animatedCharacterController.cs" />
+    <Compile Include="Assets\Character\GamepadBindings.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
-    <Compile Include="Assets\Character\animationControl.cs" />
+    <Compile Include="Assets\Character\InputState.cs" />
+    <Compile Include="Assets\Character\GamepadInputProvider.cs" />
+    <Compile Include="Assets\Character\PlayerController.cs" />
     <Compile Include="Assets\Character\HandTrigger.cs" />
   </ItemGroup>
   <ItemGroup>
