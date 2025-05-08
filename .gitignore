@@ -3,3 +3,5 @@ Library/*cache
 Temp/
 Temp/*
 UserSettings/
+Logs/
+Logs/*
