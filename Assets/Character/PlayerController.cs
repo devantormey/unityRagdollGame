@@ -7,8 +7,13 @@ public class PlayerController : MonoBehaviour
     private IInputProvider inputProvider;
     private InputState inputState;
 
+    public Health health;
+    public float strength = 50f;
+
     private bool wasGrabbingLeft = false;
     private bool wasGrabbingRight = false;
+
+    private bool wasAttacking = false;
 
     void Start()
     {
@@ -26,11 +31,16 @@ public class PlayerController : MonoBehaviour
             Debug.LogError("No input provider found!");
 
         ragdollController.Initialize();
+
+        animationController.OnPunchImpulse += () =>
+        {
+            ragdollController.ApplyPunchImpulse(strength);
+        };
     }
 
     void Update()
     {
-        inputState = inputProvider.GetInputState();
+        if (inputProvider != null){ inputState = inputProvider.GetInputState(); }
 
         // Movement
         animationController.SetWalking(inputState.MoveDirection.magnitude > 0.1f);
@@ -41,6 +51,24 @@ public class PlayerController : MonoBehaviour
         // Punching
         if (inputState.IsPunchingLeft) animationController.PunchLeft();
         if (inputState.IsPunchingRight) animationController.PunchRight();
+
+        // Attacking
+        if (inputState.IsAttacking && !wasAttacking)
+        {
+            animationController.StartAttack();
+        }
+        
+        if (inputState.IsAttacking)
+        {
+            animationController.UpdateAttackProgress(inputState.AttackProgress);
+            // ragdollController.TryAttack();
+        }
+
+        if (!inputState.IsAttacking && wasAttacking)
+        {
+            animationController.StopAttack();
+            // ragdollController.StopAttack();
+        }
 
         // Grabbing
         if (inputState.IsGrabbingLeft && !wasGrabbingLeft)
@@ -78,11 +106,20 @@ public class PlayerController : MonoBehaviour
         // Cache for next frame
         wasGrabbingLeft = inputState.IsGrabbingLeft;
         wasGrabbingRight = inputState.IsGrabbingRight;
+        wasAttacking = inputState.IsAttacking;
 
         // Jump
-        if (inputState.IsJumping)
+        if (inputState.IsJumping){
             ragdollController.TryJump();
+            // Debug.Log("Starting Jump");
+            animationController.StartJump();
+        }  
 
+
+        if (!ragdollController.CheckJumping()){
+                // Debug.Log("Stopping Jump");
+                animationController.StopJump();
+            }
         // Optional: toggle ragdoll mode here
     }
 

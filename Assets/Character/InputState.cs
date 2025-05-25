@@ -6,6 +6,9 @@ public struct InputState
     public bool IsJumping;
     public bool IsPunchingLeft;
     public bool IsPunchingRight;
+
+    public bool IsAttacking;
+    public float AttackProgress;
     public bool IsGrabbingLeft;
     public bool IsGrabbingRight;
     public float GrabHeight;  // for grab height

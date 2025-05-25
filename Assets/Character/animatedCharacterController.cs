@@ -1,14 +1,22 @@
 using UnityEngine;
+using System; 
 
 public class AnimationController : MonoBehaviour
 {
     private Animator animator;
-    private float rotationSpeed = 150f;
+    // private float rotationSpeed = 150f;
 
     private bool grabLeft = false;
     private bool grabRight = false;
 
     private float grabHeight = 0.5f;
+    private float attackProgress = 0.0f;
+    private bool isAttacking = false;
+    private bool hitMidpoint = false;
+
+    public Action OnPunchImpulse;
+    //movement
+    public float rotationSpeed = 3f; // Exposed in the inspector for tuning
 
     void Start()
     {
@@ -38,7 +46,7 @@ public class AnimationController : MonoBehaviour
             Vector3 euler = targetRotation.eulerAngles;
             euler.x = 0f;
             euler.z = 0f;
-            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(euler), 10f * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(euler), rotationSpeed * Time.deltaTime);
         }
     }
 
@@ -59,10 +67,38 @@ public class AnimationController : MonoBehaviour
         else grabRight = true;
     }
 
+    //This should consume an enumaration based on equipment and trigger the corresponding animation
+    public void StartAttack()
+    {
+        animator.SetBool("isAttacking", true);
+        isAttacking = true;
+    }
+
+    public void StartJump(){
+        animator.SetBool("isJumping",true);
+    }
+    public void StopJump(){
+        animator.SetBool("isJumping",false);
+    }
+
     public void UpdateGrabHeight(float normalizedHeight)
     {
         grabHeight = Mathf.Clamp01(normalizedHeight);  // Ensure it's between 0–1
         animator.SetFloat("GrabHeight", grabHeight);
+    }
+    public void UpdateAttackProgress(float normalizedHeight)
+    {
+        attackProgress = Mathf.Clamp01(normalizedHeight);  // Ensure it's between 0–1
+        animator.SetFloat("AttackProgress", attackProgress);
+        if (isAttacking && attackProgress <= 0.1){
+            hitMidpoint = true;
+        }
+        if (hitMidpoint && isAttacking && attackProgress >= 0.5){
+            //apply force in punch direction proportional to strength
+            OnPunchImpulse?.Invoke();  // Call the action if assigned
+            //set midpoint false so this only happens once
+            hitMidpoint = false;
+        }
     }
 
     public void StopGrab(bool isLeft)
@@ -74,5 +110,11 @@ public class AnimationController : MonoBehaviour
         {
             animator.SetBool("Grab", false);
         }
+    }
+    public void StopAttack()
+    {
+        animator.SetBool("isAttacking", false);
+        isAttacking = false;
+        hitMidpoint = false;
     }
 }

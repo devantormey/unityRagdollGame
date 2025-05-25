@@ -66,16 +66,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Character\CameraControl.cs" />
+    <Compile Include="Assets\Character\FootGroundDetector.cs" />
     <Compile Include="Assets\Character\KeyboardInputProvider.cs" />
+    <Compile Include="Assets\Character\baseAI.cs" />
     <Compile Include="Assets\Character\IInputProvider.cs" />
     <Compile Include="Assets\Character\ragdollCharacterController.cs" />
     <Compile Include="Assets\Character\animatedCharacterController.cs" />
+    <Compile Include="Assets\Character\Health.cs" />
     <Compile Include="Assets\Character\GamepadBindings.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Character\InputState.cs" />
     <Compile Include="Assets\Character\GamepadInputProvider.cs" />
     <Compile Include="Assets\Character\PlayerController.cs" />
     <Compile Include="Assets\Character\HandTrigger.cs" />
+    <Compile Include="Assets\Character\RagdollHitBox.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Character\Materials\ToonShader.shader" />

@@ -17,8 +17,10 @@ public class RagdollController : MonoBehaviour
     public float desiredSpineHeight = 1.95f;
     public float spinePinStiffness = 1000f;
     public float spinePinDamping = 100f;
+    public float uprightStiffness = 2000f;
+    public float uprightDamping = 100f;
     public float maxSpineForce = 500f;
-    public float moveForwardForce = 300f;
+    public float moveForwardForce = 100f;
     public float spine_moveForce = 100f;
     public float bobbingSpeed = 10f;
     public float bobbingAmplitude = 50f;
@@ -27,6 +29,8 @@ public class RagdollController : MonoBehaviour
 
     [Header("Foot Control")]
     public bool groundedBool = true;
+    public FootGroundDetector leftFootDetector;
+    public FootGroundDetector rightFootDetector;
 
     [Header("Grabbing")]
     public ConfigurableJoint leftGrabJoint;
@@ -37,6 +41,7 @@ public class RagdollController : MonoBehaviour
     private Dictionary<Transform, Rigidbody> boneMap = new();
     private Rigidbody spineRb;
     private Rigidbody rootRb;
+    private Rigidbody rightArmRb;
 
     private bool ragdollMode;
     public bool isJumping;
@@ -51,6 +56,7 @@ public class RagdollController : MonoBehaviour
         }
         spineRb = FindBoneRigidbodyByName("Spine1");
         rootRb = FindBoneRigidbodyByName("Root");
+        rightArmRb = FindBoneRigidbodyByName("LowerArm.R");
     }
 
     public void ToggleRagdoll(bool enabled)
@@ -62,12 +68,37 @@ public class RagdollController : MonoBehaviour
     {
         if (isJumping || rootRb == null) return;
         isJumping = true;
+        // Debug.Log("Jumping Code Ran: " + isJumping);
         rootRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         foreach (var pair in boneMap)
         {
             if (pair.Value != rootRb)
                 pair.Value.AddForce(Vector3.up * (jumpForce * 0.5f), ForceMode.Impulse);
         }
+    }
+
+
+    public void ApplyUprightTorque()
+    {
+        if (rootRb == null || ragdollMode) return;
+
+        // Current up direction of the spine
+        Vector3 currentUp = rootRb.transform.up;
+        
+        // Calculate axis and angle to rotate from current up to world up
+        Vector3 torqueAxis = Vector3.Cross(currentUp, Vector3.up);
+        float angle = Vector3.Angle(currentUp, Vector3.up);
+
+        // Convert angle to radians and apply stiffness
+        Vector3 correctiveTorque = torqueAxis.normalized * angle * Mathf.Deg2Rad * uprightStiffness;
+
+        // Apply damping based on angular velocity
+        Vector3 dampingTorque = -rootRb.angularVelocity * uprightDamping;
+
+        // Total torque
+        Vector3 totalTorque = correctiveTorque + dampingTorque;
+
+        rootRb.AddTorque(totalTorque, ForceMode.Acceleration);
     }
 
     public void UpdateSpineSpring()
@@ -148,15 +179,45 @@ public class RagdollController : MonoBehaviour
         foreach (var pair in boneMap)
             ApplyBoneRotationControl(pair.Key, pair.Value);
     }
+    public void ApplyLocalBoneRotationControlAll()
+    {
+        if (ragdollMode) return;
+        foreach (var pair in boneMap)
+        {
+            ApplyLocalBoneRotationControl(pair.Key, pair.Value);
+        }
+    }
+
+    private void ApplyLocalBoneRotationControl(Transform animatedBone, Rigidbody ragdollBone)
+    {
+        Quaternion targetLocalRotation = animatedBone.localRotation;
+        Quaternion deltaRotation = targetLocalRotation * Quaternion.Inverse(ragdollBone.transform.localRotation);
+
+        deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
+        if (angle > 180f) angle -= 360f;
+
+        Vector3 torque = (axis * angle * Mathf.Deg2Rad * rotationStiffness) - ragdollBone.angularVelocity * rotationDamping;
+        ragdollBone.AddTorque(torque, ForceMode.Acceleration);
+    }
 
     public bool IsGrounded()
     {
+        // Check both foot detectors first
+        if (leftFootDetector != null && rightFootDetector != null)
+        {
+            if (leftFootDetector.isGrounded || rightFootDetector.isGrounded)
+                return true;
+        }
+
+        // Fallback: raycast from root if foot detectors aren't available
         Ray ray = new Ray(rootRb.position, Vector3.down);
-        return Physics.Raycast(ray, 1.5f);
+        return Physics.Raycast(ray, desiredSpineHeight);
     }
+
 
     public void SetIsJumping(bool state)
     {
+        Debug.Log("Jumping State: " + isJumping);
         isJumping = state;
     }
 
@@ -186,10 +247,26 @@ public class RagdollController : MonoBehaviour
     {
         ragdollMode = !ragdollMode;
     }
+
+    public bool CheckJumping(){
+        return isJumping;
+    }
+
+    public void ApplyPunchImpulse(float force)
+    {
+        if (spineRb == null) return;
+
+        Vector3 forward = spineRb.transform.forward;
+        rightArmRb.AddForce(forward * force, ForceMode.Impulse);
+        // Debug.Log("applying punch force!");
+    }
+
     public void TickPhysics(Vector3 moveDirection)
     {
         ApplyBoneRotationControlAll();
-        UpdateSpineSpring();
+        // UpdateSpineSpring();
+        // ApplyLocalBoneRotationControlAll();
+        ApplyUprightTorque();
 
         if(IsGrounded() && isJumping)
         {
@@ -200,7 +277,7 @@ public class RagdollController : MonoBehaviour
             // Move in world-space direction
             Vector3 worldDir = moveDirection.normalized;
             rootRb.AddForce(worldDir * moveForwardForce, ForceMode.Acceleration);
-            spineRb.AddForce(worldDir * spine_moveForce, ForceMode.Acceleration);
+            // spineRb.AddForce(worldDir * spine_moveForce, ForceMode.Acceleration);
         }
     }
 
